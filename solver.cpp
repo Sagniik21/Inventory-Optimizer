@@ -1,14 +1,9 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int cost[3][3] = {
-    {2, 3, 1},
-    {5, 4, 8},
-    {5, 6, 8}
-};
-int supply[3] = {20, 30, 50};
-int demand[3] = {30, 40, 30};
-
+int cost[3][3];
+int supply[3];
+int demand[3];
 int ans = 1e9;
 int cur[3][3];
 int res[3][3];
@@ -51,13 +46,26 @@ void solve(int r, int c, int tot) {
 }
 
 int main() {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            cin >> cost[i][j];
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        cin >> supply[i];
+    }
+    for (int i = 0; i < 3; i++) {
+        cin >> demand[i];
+    }
+    
     solve(0, 0, 0);
-    cout << "Min Cost: " << ans << "\n";
-    cout << "Allocation Matrix:\n";
+    
+    cout << ans << "\n";
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             cout << res[i][j] << " ";
         }
-        cout <<endl;
+        cout << "\n";
     }
+    return 0;
 }
