@@ -12,8 +12,28 @@ function App() {
   const [ans, setAns] = useState(null)
   const [res, setRes] = useState(null)
 
+  const handleCostChange = (i, j, val) => {
+    const newCost = [...cost];
+    newCost[i][j] = Number(val) || 0;
+    setCost(newCost);
+  };
+
+  const handleSupplyChange = (i, val) => {
+    const newSupply = [...supply];
+    newSupply[i] = Number(val) || 0;
+    setSupply(newSupply);
+  };
+
+  const handleDemandChange = (i, val) => {
+    const newDemand = [...demand];
+    newDemand[i] = Number(val) || 0;
+    setDemand(newDemand);
+  };
 
   const handleSolve = async () => {
+    setAns(null); 
+    setRes(null);
+    
     try {
       const response = await fetch('http://localhost:5000/api/solve', {
         method: 'POST',
@@ -22,8 +42,6 @@ function App() {
       });
       
       const data = await response.json();
-      
-  
       setAns(data.ans);
       setRes(data.matrix);
       
@@ -32,20 +50,31 @@ function App() {
       alert("Could not connect to the engine. Is your Node server running?");
     }
   }
+  const inputStyle = { width: '50px', padding: '5px', textAlign: 'center' };
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1>Inventory Optimization Engine</h1>
+      <p style={{ color: '#555', marginBottom: '2rem' }}>
+        Edit the supply, demand, and shipping costs below to recalculate the optimal route.
+      </p>
       
-      <div style={{ display: 'flex', gap: '2rem' }}>
+      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
         <div>
           <h3>Shipping Cost Matrix</h3>
-          <table border="1" cellPadding="10" style={{ borderCollapse: 'collapse' }}>
+          <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               {cost.map((row, i) => (
                 <tr key={i}>
                   {row.map((val, j) => (
-                    <td key={j}>{val}</td>
+                    <td key={j}>
+                      <input 
+                        type="number" 
+                        value={val} 
+                        onChange={(e) => handleCostChange(i, j, e.target.value)}
+                        style={inputStyle}
+                      />
+                    </td>
                   ))}
                 </tr>
               ))}
@@ -55,10 +84,19 @@ function App() {
 
         <div>
           <h3>Warehouse Supply</h3>
-          <table border="1" cellPadding="10" style={{ borderCollapse: 'collapse' }}>
+          <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               {supply.map((val, i) => (
-                <tr key={i}><td>{val}</td></tr>
+                <tr key={i}>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={val} 
+                      onChange={(e) => handleSupplyChange(i, e.target.value)}
+                      style={inputStyle}
+                    />
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -66,11 +104,18 @@ function App() {
 
         <div>
           <h3>Store Demand</h3>
-          <table border="1" cellPadding="10" style={{ borderCollapse: 'collapse' }}>
+          <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               <tr>
                 {demand.map((val, i) => (
-                  <td key={i}>{val}</td>
+                  <td key={i}>
+                    <input 
+                      type="number" 
+                      value={val} 
+                      onChange={(e) => handleDemandChange(i, e.target.value)}
+                      style={inputStyle}
+                    />
+                  </td>
                 ))}
               </tr>
             </tbody>
@@ -85,7 +130,7 @@ function App() {
         Calculate Optimal Route
       </button>
 
-      {/* Ans Panel - has to be optimized later */}
+      {/* 5. The Results Panel */}
       {ans !== null && res !== null && (
         <div style={{ marginTop: '3rem', padding: '2rem', border: '3px solid #28a745', borderRadius: '8px', display: 'inline-block' }}>
           <h2 style={{ color: '#28a745', marginTop: 0 }}>Optimization Complete</h2>
