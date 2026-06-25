@@ -1,71 +1,105 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int cost[3][3];
-int supply[3];
-int demand[3];
-int ans = 1e9;
-int cur[3][3];
-int res[3][3];
+struct Edge {
+    int to, cap, flow, cost, rev;
+};
 
-void solve(int r, int c, int tot) {
-    if (r == 3) {
-        for (int i = 0; i < 3; i++) {
-            if (demand[i] != 0) return;
-        }
-        for (int i = 0; i < 3; i++) {
-            if (supply[i] != 0) return;
-        }
-        if (tot < ans) {
-            ans = tot;
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    res[i][j] = cur[i][j];
+int main() {
+    int M, N;
+    if (!(cin >> M >> N)) return 0;
+    
+    vector<vector<int>> cost(M, vector<int>(N));
+    for(int i=0; i<M; ++i)
+        for(int j=0; j<N; ++j)
+            cin >> cost[i][j];
+            
+    vector<int> supply(M), demand(N);
+    for(int i=0; i<M; ++i) cin >> supply[i];
+    for(int j=0; j<N; ++j) cin >> demand[j];
+    
+    int S = 0, T = M + N + 1;
+    vector<vector<Edge>> adj(T + 1);
+    
+    auto addEdge = [&](int from, int to, int cap, int cst) {
+        adj[from].push_back({to, cap, 0, cst, (int)adj[to].size()});
+        adj[to].push_back({from, 0, 0, -cst, (int)adj[from].size() - 1});
+    };
+    
+    for(int i=0; i<M; ++i) addEdge(S, i + 1, supply[i], 0);
+    for(int j=0; j<N; ++j) addEdge(M + 1 + j, T, demand[j], 0);
+    for(int i=0; i<M; ++i)
+        for(int j=0; j<N; ++j)
+            addEdge(i + 1, M + 1 + j, 1e9, cost[i][j]);
+            
+    int ans = 0;
+    vector<vector<int>> res(M, vector<int>(N, 0));
+    
+    while(true) {
+        vector<int> dist(T + 1, 1e9);
+        vector<int> parent_edge(T + 1, -1);
+        vector<int> parent_node(T + 1, -1);
+        vector<bool> flag(T + 1, false);
+        queue<int> q;
+        
+        dist[S] = 0;
+        q.push(S);
+        flag[S] = true;
+        
+        while(!q.empty()) {
+            int u = q.front(); 
+            q.pop();
+            flag[u] = false;
+            
+            for(int i=0; i<adj[u].size(); ++i) {
+                Edge& e = adj[u][i];
+                if(e.cap - e.flow > 0 && dist[e.to] > dist[u] + e.cost) {
+                    dist[e.to] = dist[u] + e.cost;
+                    parent_node[e.to] = u;
+                    parent_edge[e.to] = i;
+                    if(!flag[e.to]) {
+                        q.push(e.to);
+                        flag[e.to] = true;
+                    }
                 }
             }
         }
-        return;
-    }
-    if (c == 3) {
-        if (supply[r] == 0) {
-            solve(r + 1, 0, tot);
+        
+        if(dist[T] == 1e9) break;
+        
+        int cur = 1e9;
+        for(int u = T; u != S; u = parent_node[u]) {
+            int p = parent_node[u];
+            int idx = parent_edge[u];
+            cur = min(cur, adj[p][idx].cap - adj[p][idx].flow);
         }
-        return;
-    }
-    
-    int mx = min(supply[r], demand[c]);
-    for (int i = 0; i <= mx; i++) {
-        cur[r][c] = i;
-        supply[r] -= i;
-        demand[c] -= i;
-        solve(r, c + 1, tot + i * cost[r][c]);
-        supply[r] += i;
-        demand[c] += i;
-        cur[r][c] = 0;
-    }
-}
-
-int main() {
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            cin >> cost[i][j];
+        
+        for(int u = T; u != S; u = parent_node[u]) {
+            int p = parent_node[u];
+            int idx = parent_edge[u];
+            int rev_idx = adj[p][idx].rev;
+            adj[p][idx].flow += cur;
+            adj[u][rev_idx].flow -= cur;
+            ans += cur * adj[p][idx].cost;
         }
     }
-    for (int i = 0; i < 3; i++) {
-        cin >> supply[i];
-    }
-    for (int i = 0; i < 3; i++) {
-        cin >> demand[i];
-    }
-    
-    solve(0, 0, 0);
     
     cout << ans << "\n";
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+    
+    for(int i=0; i<M; ++i) {
+        for(Edge& e : adj[i+1]) {
+            if(e.to >= M + 1 && e.to <= M + N) {
+                res[i][e.to - M - 1] = e.flow;
+            }
+        }
+    }
+    
+    for(int i=0; i<M; ++i) {
+        for(int j=0; j<N; ++j) {
             cout << res[i][j] << " ";
         }
         cout << "\n";
     }
+    
     return 0;
 }

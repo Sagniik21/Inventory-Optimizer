@@ -8,22 +8,20 @@ app.use(express.json());
 
 app.post('/api/solve', (req, res) => {
     const { cost, supply, demand } = req.body;
+    const M = cost.length;
+    const N = cost[0].length;
     
-    
-    let input = '';
+    let input = `${M} ${N}\n`;
     cost.forEach(row => input += row.join(' ') + ' ');
     input += '\n' + supply.join(' ') + '\n' + demand.join(' ') + '\n';
 
-    
     const child = spawn('../solver.exe');
     let out = '';
 
-    
     child.stdout.on('data', (data) => {
         out += data.toString();
     });
 
-    
     child.on('close', () => {
         let parts = out.trim().split('\n');
         let ans = parseInt(parts[0]);
@@ -32,7 +30,6 @@ app.post('/api/solve', (req, res) => {
         res.json({ ans, matrix });
     });
 
-    
     child.stdin.write(input);
     child.stdin.end();
 });

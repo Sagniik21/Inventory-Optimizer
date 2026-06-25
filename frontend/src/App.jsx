@@ -13,55 +13,74 @@ function App() {
   const [res, setRes] = useState(null)
 
   const handleCostChange = (i, j, val) => {
-    const newCost = [...cost];
-    newCost[i][j] = Number(val) || 0;
+    const newCost = cost.map((row, rIdx) => 
+      row.map((col, cIdx) => (rIdx === i && cIdx === j ? (Number(val) || 0) : col))
+    );
     setCost(newCost);
   };
 
-  const handleSupplyChange = (i, val) => {
-    const newSupply = [...supply];
-    newSupply[i] = Number(val) || 0;
-    setSupply(newSupply);
+  const addWarehouse = () => {
+    const numStores = cost[0].length;
+    setCost([...cost, Array(numStores).fill(0)]);
+    setSupply([...supply, 0]);
+    setAns(null); setRes(null);
   };
 
-  const handleDemandChange = (i, val) => {
-    const newDemand = [...demand];
-    newDemand[i] = Number(val) || 0;
-    setDemand(newDemand);
+  const removeWarehouse = () => {
+    if (cost.length > 1) {
+      setCost(cost.slice(0, -1));
+      setSupply(supply.slice(0, -1));
+      setAns(null); setRes(null);
+    }
+  };
+
+  const addStore = () => {
+    setCost(cost.map(row => [...row, 0]));
+    setDemand([...demand, 0]);
+    setAns(null); setRes(null);
+  };
+
+  const removeStore = () => {
+    if (cost[0].length > 1) {
+      setCost(cost.map(row => row.slice(0, -1)));
+      setDemand(demand.slice(0, -1));
+      setAns(null); setRes(null);
+    }
   };
 
   const handleSolve = async () => {
-    setAns(null); 
-    setRes(null);
-    
+    setAns(null); setRes(null);
     try {
       const response = await fetch('http://localhost:5000/api/solve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cost, supply, demand })
       });
-      
       const data = await response.json();
       setAns(data.ans);
       setRes(data.matrix);
-      
     } catch (error) {
       console.error("API Error:", error);
-      alert("Could not connect to the engine. Is your Node server running?");
+      alert("Verification failed. Check local server routing.");
     }
   }
-  const inputStyle = { width: '50px', padding: '5px', textAlign: 'center' };
+
+  const btnStyle = { padding: '6px 12px', marginRight: '8px', cursor: 'pointer', fontWeight: 'bold' };
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Inventory Optimization Engine</h1>
-      <p style={{ color: '#555', marginBottom: '2rem' }}>
-        Edit the supply, demand, and shipping costs below to recalculate the optimal route.
-      </p>
+      <h1>Enterprise Inventory Optimizer (Dynamic Scale)</h1>
+      
+      <div style={{ marginBottom: '1.5rem' }}>
+        <button onClick={addWarehouse} style={btnStyle}>+ Add Warehouse</button>
+        <button onClick={removeWarehouse} style={btnStyle}>- Remove Warehouse</button>
+        <button onClick={addStore} style={btnStyle}>+ Add Store</button>
+        <button onClick={removeStore} style={btnStyle}>- Remove Store</button>
+      </div>
       
       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
         <div>
-          <h3>Shipping Cost Matrix</h3>
+          <h3>Routing Cost Grid</h3>
           <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               {cost.map((row, i) => (
@@ -72,7 +91,7 @@ function App() {
                         type="number" 
                         value={val} 
                         onChange={(e) => handleCostChange(i, j, e.target.value)}
-                        style={inputStyle}
+                        style={{ width: '50px', textAlign: 'center' }}
                       />
                     </td>
                   ))}
@@ -83,7 +102,7 @@ function App() {
         </div>
 
         <div>
-          <h3>Warehouse Supply</h3>
+          <h3>Warehouse Supply Cap</h3>
           <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               {supply.map((val, i) => (
@@ -92,8 +111,10 @@ function App() {
                     <input 
                       type="number" 
                       value={val} 
-                      onChange={(e) => handleSupplyChange(i, e.target.value)}
-                      style={inputStyle}
+                      onChange={(e) => {
+                        const s = [...supply]; s[i] = Number(e.target.value) || 0; setSupply(s);
+                      }}
+                      style={{ width: '50px', textAlign: 'center' }}
                     />
                   </td>
                 </tr>
@@ -103,7 +124,7 @@ function App() {
         </div>
 
         <div>
-          <h3>Store Demand</h3>
+          <h3>Retail Location Demand</h3>
           <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               <tr>
@@ -112,8 +133,10 @@ function App() {
                     <input 
                       type="number" 
                       value={val} 
-                      onChange={(e) => handleDemandChange(i, e.target.value)}
-                      style={inputStyle}
+                      onChange={(e) => {
+                        const d = [...demand]; d[i] = Number(e.target.value) || 0; setDemand(d);
+                      }}
+                      style={{ width: '50px', textAlign: 'center' }}
                     />
                   </td>
                 ))}
@@ -125,18 +148,16 @@ function App() {
 
       <button 
         onClick={handleSolve} 
-        style={{ marginTop: '2rem', padding: '10px 20px', fontSize: '1.2rem', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
+        style={{ marginTop: '2rem', padding: '12px 24px', fontSize: '1.2rem', cursor: 'pointer', backgroundColor: '#0056b3', color: 'white', border: 'none', borderRadius: '4px' }}
       >
-        Calculate Optimal Route
+        Execute Optimization Solver
       </button>
 
-      {/* 5. The Results Panel */}
       {ans !== null && res !== null && (
         <div style={{ marginTop: '3rem', padding: '2rem', border: '3px solid #28a745', borderRadius: '8px', display: 'inline-block' }}>
-          <h2 style={{ color: '#28a745', marginTop: 0 }}>Optimization Complete</h2>
-          <p style={{ fontSize: '1.5rem' }}><strong>Absolute Minimum Cost:</strong> ${ans}</p>
-          
-          <h3>Optimal Route Allocation</h3>
+          <h2 style={{ color: '#28a745', marginTop: 0 }}>Optimization Profile Loaded</h2>
+          <p style={{ fontSize: '1.5rem' }}><strong>Targeted Minimum Overhead:</strong> ${ans}</p>
+          <h3>Calculated Freight Matrix</h3>
           <table border="1" cellPadding="10" style={{ borderCollapse: 'collapse', textAlign: 'center' }}>
             <tbody>
               {res.map((row, i) => (
