@@ -1,4 +1,4 @@
-# Enterprise Inventory Logistics Optimizer
+# Enterprise Inventory Logistics Optimizer 
 
 A high-performance, full-stack supply chain routing engine designed to solve the classical Transportation Problem at an enterprise scale. 
 
